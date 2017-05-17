@@ -5,7 +5,7 @@ using UnityEngine;
 public class ControllerGrabObject : MonoBehaviour {
 
     private SteamVR_TrackedObject trackedObj;
-
+    private SnappingController snapControl;
     // 1
     private GameObject collidingObject;
     // 2
@@ -14,6 +14,11 @@ public class ControllerGrabObject : MonoBehaviour {
     private SteamVR_Controller.Device Controller
     {
         get { return SteamVR_Controller.Input((int)trackedObj.index); }
+    }
+
+    void Start()
+    {
+        snapControl = GameObject.Find("SnapStuff").GetComponent<SnappingController>();
     }
 
     void Awake()
@@ -74,6 +79,10 @@ public class ControllerGrabObject : MonoBehaviour {
             Destroy(GetComponent<FixedJoint>());
             objectInHand.GetComponent<Rigidbody>().velocity = Controller.velocity;
             objectInHand.GetComponent<Rigidbody>().angularVelocity = Controller.angularVelocity;
+            if (objectInHand.tag.Equals("SnapObject"))
+            {
+                snapControl.doSnap(objectInHand);
+            }
         }
         objectInHand = null;
     }
