@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class SnappingController : MonoBehaviour
 {
+    private const float snapDist = 0.05f; 
     List<GameObject> snapObjects;
 
 	// Use this for initialization
@@ -19,17 +20,44 @@ public class SnappingController : MonoBehaviour
 
     public void doSnap(GameObject snapObject)
     {
-        List<GameObject> snapPoints = new List<GameObject>();
-        findAllSnapPoints(snapPoints, snapObject.transform);
-        foreach (GameObject snapPoint in snapPoints)
+        List<GameObject> ownSnapPoints = new List<GameObject>();
+        findAllSnapPoints(ownSnapPoints, snapObject.transform);
+        foreach (GameObject otherObject in snapObjects)
         {
-            Transform t = snapPoint.transform;
-            t.localPosition = new Vector3(0, 0.002f, 0);
+            if(otherObject != snapObject)
+            {
+                List<GameObject> otherSnapPoints = new List<GameObject>();
+                findAllSnapPoints(otherSnapPoints, otherObject.transform);
+                foreach(GameObject ownSnapPoint in ownSnapPoints)
+                {
+                    foreach(GameObject otherSnapPoint in otherSnapPoints)
+                    {
+                        if(Vector3.Distance(ownSnapPoint.transform.position, otherSnapPoint.transform.position) < snapDist)
+                        {
+                            Quaternion qalign = Quaternion.FromToRotation(ownSnapPoint.transform.forward, -otherSnapPoint.transform.forward);
+                            snapObject.transform.rotation = qalign * snapObject.transform.rotation;
+                            Vector3 align = otherSnapPoint.transform.position - ownSnapPoint.transform.position; // + (otherSnapPoint.transform.forward * 0.1f);
+                            //align = snapObject.transform.InverseTransformVector(align);
+                       
+                            snapObject.transform.Translate(align, Space.World);
+                            AddFixedJoint(snapObject, otherObject);
+                        }
+                    }
+                }
+            }
         }
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    private void AddFixedJoint(GameObject obj1, GameObject obj2)
+    {
+        FixedJoint fx = obj1.AddComponent<FixedJoint>();
+        fx.breakForce = 1000;
+        fx.breakTorque = 1000;
+        fx.connectedBody = obj2.GetComponent<Rigidbody>();
+    }
+
+    // Update is called once per frame
+    void Update ()
     {
 		
 	}
